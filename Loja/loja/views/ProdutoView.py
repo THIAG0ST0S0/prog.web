@@ -5,6 +5,15 @@ from loja.models import Produto
 from datetime import timedelta, datetime
 from django.utils import timezone
 
+def edit_produto_view(request, id=None):
+    produtos = Produto.objects.all()
+    if id is not None:
+        produtos = produtos.filter(id=id)
+    produto = produtos.first()
+    print(produto)
+    context = { 'produto': produto }
+    return render(request, template_name='produto/produto-edit.html', context=context, status=200)
+
 def list_produto_view(request, id=None):
     return HttpResponse('<h1>Produto de id %s!</h1>' % id)
     produto = request.GET.get("produto")
