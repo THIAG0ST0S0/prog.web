@@ -5,6 +5,7 @@ from loja.models import Produto
 from datetime import timedelta, datetime
 from django.utils import timezone
 from django.core.files.storage import FileSystemStorage
+import os
 
 def create_produto_view(request, id=None):
     if request.method == 'POST':
@@ -13,6 +14,8 @@ def create_produto_view(request, id=None):
         promocao = request.POST.get("promocao")
         msgPromocao = request.POST.get("msgPromocao")
         preco = request.POST.get("preco")
+        categoria = request.POST.get("CategoriaFk")
+        fabricante = request.POST.get("FabricanteFk")
         image = request.POST.get("image")
         print("postback-create")
         print(produto)
@@ -31,6 +34,8 @@ def create_produto_view(request, id=None):
             obj_produto.preco = 0
             if (preco is not None) and ( preco != ""):
                 obj_produto.preco = preco
+            obj_produto.categoria = Categoria.objects.filter(id=categoria).first()
+            obj_produto.fabricante = Fabricante.objects.filter(id=fabricante).first()    
             obj_produto.criado_em = timezone.now()
             obj_produto.alterado_em = obj_produto.criado_em
             if request.FILES is not None:
@@ -47,7 +52,10 @@ def create_produto_view(request, id=None):
         except Exception as e:
             print("Erro inserindo produto: %s" % e)
         return redirect("/produto")
-    return render(request, template_name='produto/produto-create.html',status=200)
+    Fabricantes = Fabricante.objects.all()
+    Categorias = Categoria.objects.all()
+    context = {'fabricantes': Fabricantes, 'categorias': Categorias}
+    return render(request, template_name='produto/produto-create.html', context=context, status=200)
 
 def edit_produto_view(request, id=None):
     produtos = Produto.objects.all()
@@ -61,7 +69,6 @@ def edit_produto_view(request, id=None):
     return render(request, template_name='produto/produto-edit.html', context=context, status=200)
 
 def list_produto_view(request, id=None):
-    return HttpResponse('<h1>Produto de id %s!</h1>' % id)
     produto = request.GET.get("produto")
     destaque = request.GET.get("destaque")
     promocao = request.GET.get("promocao")
@@ -69,15 +76,6 @@ def list_produto_view(request, id=None):
     fabricante = request.GET.get("fabricante")
     dias = request.GET.get("dias")
     produtos = Produto.objects.all()
-    produtos = Produto.objects.filter(Produto=produto)
-    print(produtos)
-    produtos = Produto.objects.all()
-    if dias is not None:
-        now = timezone.now()
-        now = now - timedelta(days = int(dias))
-        produtos = produtos.filter(criado_em__gte=now)
-    context = {'produtos': produtos}
-    return render(request, template_name='produto/produto.html', context=context, status=200)
     if produto is not None:
         produtos = produtos.filter(Produto=produto)
     if promocao is not None:
@@ -88,10 +86,14 @@ def list_produto_view(request, id=None):
         produtos = produtos.filter(categoria__Categoria=categoria)
     if fabricante is not None:
         produtos = produtos.filter(fabricante__Fabricante=fabricante)
+    if dias is not None:
+        now = timezone.now()
+        now = now - timedelta(days=int(dias))
+        produtos = produtos.filter(criado_em__gte=now)
     if id is not None:
         produtos = produtos.filter(id=id)
-    print(produtos)
-    return HttpResponse('<h1>Produto de id %s!<h1>' % id)
+    context = {'produtos': produtos}
+    return render(request, template_name='produto/produto.html', context=context, status=200)
 
 def edit_produto_postback(request, id=None):
     if request.method == 'POST':
@@ -144,9 +146,12 @@ def delete_produto_view(request, id=None):
     return render(request, template_name='produto/produto-delete.html', context=context, status=200)  
 
 def delete_produto_postback(request, id=None):
-# Processa o post back gerado pela action
+    obj_produto = Produto.objects.filter(id=id).first()
+    if obj_produto.image:
+        if os.path.isfile(obj_produto.image.path):
+            os.remove(obj_produto.image.path)
+    Produto.objects.filter(id=id).delete()        
     if request.method == 'POST':
-    # Salva dados editados
         id = request.POST.get("id")
         produto = request.POST.get("Produto")
         print("postback-delete")
