@@ -146,19 +146,22 @@ def delete_produto_view(request, id=None):
     return render(request, template_name='produto/produto-delete.html', context=context, status=200)  
 
 def delete_produto_postback(request, id=None):
-    obj_produto = Produto.objects.filter(id=id).first()
-    if obj_produto.image:
-        if os.path.isfile(obj_produto.image.path):
-            os.remove(obj_produto.image.path)
-    Produto.objects.filter(id=id).delete()        
     if request.method == 'POST':
         id = request.POST.get("id")
         produto = request.POST.get("Produto")
         print("postback-delete")
-        print(id) 
+        print(id)
         try:
-            Produto.objects.filter(id=id).delete()
-            print("Produto %s excluido com sucesso" % produto)
+            obj_produto = Produto.objects.filter(id=id).first()
+            if obj_produto is not None:
+                if obj_produto.image:
+                    caminho = obj_produto.image.path
+                    print(caminho)
+                    if os.path.exists(caminho):
+                        os.remove(caminho)
+                        print("Imagem removida com sucesso")
+                obj_produto.delete()
+                print("Produto %s excluido com sucesso" % produto)
         except Exception as e:
-            print("Erro salvando edição de produto: %s" % e)
-    return redirect("/produto")         
+            print("Erro excluindo produto: %s" % e)
+    return redirect("/produto")      
