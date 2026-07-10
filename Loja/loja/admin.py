@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import * #imporata nossos models
+from .models import * #importa nossos models
 
 class FabricanteAdmin(admin.ModelAdmin):
     # Cria um filtro de hierarquia com datas
@@ -10,4 +10,5 @@ class FabricanteAdmin(admin.ModelAdmin):
 admin.site.register(Fabricante) #adiciona a interface do adm
 admin.site.register(Categoria)
 admin.site.register(Produto)
+admin.site.register(Usuario)
 
